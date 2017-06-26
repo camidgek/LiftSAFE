@@ -1,1 +1,8 @@
-Old_Versions/*
+Old_Versions/
+*bin
+*obj
+*suo
+*.user
+*.tmp
+*.TMP
+LiftSafe/.vs/
