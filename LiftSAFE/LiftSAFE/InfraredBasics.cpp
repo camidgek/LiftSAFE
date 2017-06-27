@@ -52,8 +52,6 @@ CInfraredBasics::CInfraredBasics() :
 		m_fFreq = double(qpf.QuadPart);
 	}
 
-	InitializeDefaultSensor();
-
 	// create heap storage for infrared pixel data in RGBX format
 	m_pInfraredRGBX = new RGBQUAD[cInfraredWidth * cInfraredHeight];
 }
@@ -109,16 +107,7 @@ int CInfraredBasics::Run(HINSTANCE hInstance, int nCmdShow)
 		return 0;
 	}
 
-	// Create main application window
-	HWND hWndApp = CreateDialogParamW(
-		NULL,
-		MAKEINTRESOURCE(IDD_APP),
-		NULL,
-		(DLGPROC)CInfraredBasics::MessageRouter,
-		reinterpret_cast<LPARAM>(this));
-
-	// Show window
-	ShowWindow(hWndApp, nCmdShow);
+	InitializeDefaultSensor();
 
 	// Main message loop
 	while (msg.message != WM_QUIT)
@@ -127,12 +116,6 @@ int CInfraredBasics::Run(HINSTANCE hInstance, int nCmdShow)
 
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			// If a dialog message will be taken care of by the dialog proc
-			if (hWndApp && IsDialogMessageW(hWndApp, &msg))
-			{
-				continue;
-			}
-
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
