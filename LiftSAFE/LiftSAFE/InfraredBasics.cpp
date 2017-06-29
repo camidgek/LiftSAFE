@@ -44,7 +44,8 @@ CInfraredBasics::CInfraredBasics() :
 	m_pKinectSensor(NULL),
 	m_pInfraredFrameReader(NULL),
 	m_pD2DFactory(NULL),
-	m_pInfraredRGBX(NULL)
+	m_pInfraredRGBX(NULL),
+	m_pImageProcessor(new CImageProcessor)
 {
 	LARGE_INTEGER qpf = { 0 };
 	if (QueryPerformanceFrequency(&qpf))
@@ -379,7 +380,7 @@ void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nW
 			++pBuffer;
 		}
 
-		pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
+		m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
 
 	}
 }

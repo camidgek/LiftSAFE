@@ -10,24 +10,31 @@
 
 #include <opencv2/opencv.hpp>
 
-class ImageProcessor
+class CImageProcessor
 {
 public:
 	/// <summary>
 	/// Constructor
 	/// </summary>
-	ImageProcessor();
+	CImageProcessor();
 
 	/// <summary>
 	/// Destructor
 	/// </summary>
-	virtual ~ImageProcessor();
+	~CImageProcessor();
 
 	/// <summary>
 	/// OPENCV STUFF
 	/// </summary>
 	void ProcessImage(BYTE* pImage);
 
+	std::vector<cv::Point2f> get_positions(cv::Mat& image);
+
 private:
-	int nFrame;
+	cv::Mat						m_mIrImage;
+	cv::Mat						m_mThreshImage;
+	int							m_nHeight;
+	int							m_nWidth;
+	int							m_nFrame;
+	std::vector<cv::Point2f>	m_vCenterPoints;
 };

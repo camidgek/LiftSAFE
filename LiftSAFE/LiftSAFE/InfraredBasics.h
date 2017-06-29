@@ -92,14 +92,14 @@ private:
 	IKinectSensor*          m_pKinectSensor;
 
 	// Infrared reader
-	IInfraredFrameReader*  m_pInfraredFrameReader;
+	IInfraredFrameReader*   m_pInfraredFrameReader;
 
 	// Direct2D
 	ID2D1Factory*           m_pD2DFactory;
 	RGBQUAD*                m_pInfraredRGBX;
 
 	// OPENCV
-	ImageProcessor* pImageProcessor;
+	CImageProcessor*			m_pImageProcessor;
 
 	/// <summary>
 	/// Main processing function
