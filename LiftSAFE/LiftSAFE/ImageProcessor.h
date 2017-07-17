@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "resource.h"
+
 #include <opencv2/opencv.hpp>
 
 class CImageProcessor
@@ -36,5 +38,6 @@ private:
 	int							m_nHeight;
 	int							m_nWidth;
 	int							m_nFrame;
-	std::vector<cv::Point2f>	m_vCenterPoints;
+	std::vector<cv::Point2f>	m_vCenterPointsLeft;
+	std::vector<cv::Point2f>	m_vCenterPointsRight;
 };

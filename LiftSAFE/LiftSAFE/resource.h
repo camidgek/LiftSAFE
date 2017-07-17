@@ -6,6 +6,7 @@
 
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
+#define PI 3.14159265
 // Used by InfraredBasics.rc
 //
 #define IDI_APP                         100

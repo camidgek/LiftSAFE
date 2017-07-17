@@ -14,9 +14,12 @@ CImageProcessor::CImageProcessor() :
 	m_mIrImage(),
 	m_mThreshImage(),
 	m_nWidth(0),
-	m_nHeight(0)
+	m_nHeight(0),
+	m_nFrame(0),
+	m_vCenterPointsLeft(),
+	m_vCenterPointsRight()
 {
-	m_nFrame = 0;
+	
 }
 
 /// <summary>
@@ -31,8 +34,6 @@ CImageProcessor::~CImageProcessor()
 /// </summary>
 void CImageProcessor::ProcessImage(BYTE* pImage)
 {
-	m_nFrame++;
-
 	m_mIrImage = cv::Mat(cvSize(512, 424), CV_8UC4, pImage).clone();
 	
 	m_nWidth = m_mIrImage.cols; m_nHeight = m_mIrImage.rows;
@@ -54,7 +55,47 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	// Retrieve a vector of points with the (x,y) location of the objects
 	std::vector<cv::Point2f> points = get_positions(m_mThreshImage);
 
-	// Draw a small green circle at those locations for educational purposes
+	for (unsigned int i = 0; i < points.size(); i++)
+	{
+		// Left Half
+		if (points[i].x < (m_nWidth / 2))
+		{
+			m_vCenterPointsLeft.push_back(points[i]);
+		}
+		// Right Half
+		else
+		{
+			m_vCenterPointsRight.push_back(points[i]);
+		}
+	}
+
+	// Check for zeros
+	if (m_vCenterPointsLeft.size() < m_nFrame + 1)
+	{
+		m_vCenterPointsLeft.push_back(cv::Point2f(0, 0));
+	}
+	if (m_vCenterPointsRight.size() < m_nFrame + 1)
+	{
+		m_vCenterPointsRight.push_back(cv::Point2f(0, 0));
+	}
+
+	int adjacent = m_vCenterPointsLeft[m_nFrame].x - m_vCenterPointsRight[m_nFrame].x;
+	int opposite = m_vCenterPointsLeft[m_nFrame].y - m_vCenterPointsRight[m_nFrame].y;
+	float radians = atan2(opposite,adjacent);
+	float angle = (180 * radians) / PI;
+
+	std::stringstream stream;
+	stream << std::fixed << std::setprecision(2) << angle;
+	std::string strAngle = stream.str();
+	
+	cv::putText(m_mIrImage,									// Input Image
+		strAngle,											// Text
+		cv::Point2f(30,30),									// Position
+		cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
+		1,													// Scale
+		cv::Scalar(0, 0, 255));								// Color
+
+	// Draw a small red circle at those locations
 	for (unsigned int i = 0; i < points.size(); i++)
 	{
 		// Dirty convert point to string
@@ -69,11 +110,12 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 					cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
 					1,													// Scale
 					cv::Scalar(0, 0, 255));								// Color
-
+		
 		// Throw some balls on there too
 		cv::circle(m_mIrImage, points[i], 3, cv::Scalar(0, 0, 255), -1);
 	}
 
+	m_nFrame++;
 
 	cv::imshow("window", m_mIrImage);
 }
@@ -93,9 +135,12 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	for (unsigned int i = 0; i < contours.size(); i++)
 	{
 		moment = cv::moments(contours[i]);
-		unsigned int x = (double(moment.m10) / double(moment.m00));
-		unsigned int y = (double(moment.m01) / double(moment.m00));
-		center[i] = cv::Point2f(x, y);
+		if (moment.m00 < 750)
+		{
+			unsigned int x = (double(moment.m10) / double(moment.m00));
+			unsigned int y = (double(moment.m01) / double(moment.m00));
+			center[i] = cv::Point2f(x, y);
+		}
 	}
 
 	return center;
