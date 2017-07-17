@@ -92,22 +92,7 @@ CInfraredBasics::~CInfraredBasics()
 int CInfraredBasics::Run(HINSTANCE hInstance, int nCmdShow)
 {
 	MSG       msg = { 0 };
-	WNDCLASS  wc;
-
-	// Dialog custom window class
-	ZeroMemory(&wc, sizeof(wc));
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.cbWndExtra = DLGWINDOWEXTRA;
-	wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
-	wc.hIcon = LoadIconW(hInstance, MAKEINTRESOURCE(IDI_APP));
-	wc.lpfnWndProc = DefDlgProcW;
-	wc.lpszClassName = L"InfraredBasicsAppDlgWndClass";
-
-	if (!RegisterClassW(&wc))
-	{
-		return 0;
-	}
-
+	
 	InitializeDefaultSensor();
 
 	// Main message loop
@@ -179,6 +164,129 @@ void CInfraredBasics::Update()
 	}
 
 	SafeRelease(pInfraredFrame);
+}
+
+/// <summary>
+/// Handle new infrared data
+/// <param name="nTime">timestamp of frame</param>
+/// <param name="pBuffer">pointer to frame data</param>
+/// <param name="nWidth">width (in pixels) of input image data</param>
+/// <param name="nHeight">height (in pixels) of input image data</param>
+/// </summary>
+void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight)
+{
+	if (m_hWnd)
+	{
+		if (!m_nStartTime)
+		{
+			m_nStartTime = nTime;
+		}
+
+		double fps = 0.0;
+
+		LARGE_INTEGER qpcNow = { 0 };
+		if (m_fFreq)
+		{
+			if (QueryPerformanceCounter(&qpcNow))
+			{
+				if (m_nLastCounter)
+				{
+					m_nFramesSinceUpdate++;
+					fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
+				}
+			}
+		}
+
+		WCHAR szStatusMessage[64];
+		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
+
+		if (SetStatusMessage(szStatusMessage, 1000, false))
+		{
+			m_nLastCounter = qpcNow.QuadPart;
+			m_nFramesSinceUpdate = 0;
+		}
+	}
+
+	if (m_pInfraredRGBX && pBuffer && (nWidth == cInfraredWidth) && (nHeight == cInfraredHeight))
+	{
+		RGBQUAD* pDest = m_pInfraredRGBX;
+
+		// end pixel is start + width*height - 1
+		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
+
+		while (pBuffer < pBufferEnd)
+		{
+			// normalize the incoming infrared data (ushort) to a float ranging from 
+			// [InfraredOutputValueMinimum, InfraredOutputValueMaximum] by
+			// 1. dividing the incoming value by the source maximum value
+			float intensityRatio = static_cast<float>(*pBuffer) / InfraredSourceValueMaximum;
+
+			// 2. dividing by the (average scene value * standard deviations)
+			intensityRatio /= InfraredSceneValueAverage * InfraredSceneStandardDeviations;
+
+			// 3. limiting the value to InfraredOutputValueMaximum
+			intensityRatio = std::min(InfraredOutputValueMaximum, intensityRatio);
+
+			// 4. limiting the lower value InfraredOutputValueMinimym
+			intensityRatio = std::max(InfraredOutputValueMinimum, intensityRatio);
+
+			// 5. converting the normalized value to a byte and using the result
+			// as the RGB components required by the image
+			byte intensity = static_cast<byte>(intensityRatio * 255.0f);
+			pDest->rgbRed = intensity;
+			pDest->rgbGreen = intensity;
+			pDest->rgbBlue = intensity;
+
+			++pDest;
+			++pBuffer;
+		}
+
+		m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
+
+	}
+}
+
+/// <summary>
+/// Initializes the default Kinect sensor
+/// </summary>
+/// <returns>indicates success or failure</returns>
+HRESULT CInfraredBasics::InitializeDefaultSensor()
+{
+	HRESULT hr;
+
+	hr = GetDefaultKinectSensor(&m_pKinectSensor);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	if (m_pKinectSensor)
+	{
+		// Initialize the Kinect and get the infrared reader
+		IInfraredFrameSource* pInfraredFrameSource = NULL;
+
+		hr = m_pKinectSensor->Open();
+
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pKinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrameSource->OpenReader(&m_pInfraredFrameReader);
+		}
+
+		SafeRelease(pInfraredFrameSource);
+	}
+
+	if (!m_pKinectSensor || FAILED(hr))
+	{
+		SetStatusMessage(L"No ready Kinect found!", 10000, true);
+		return E_FAIL;
+	}
+
+	return hr;
 }
 
 /// <summary>
@@ -260,129 +368,6 @@ LRESULT CALLBACK CInfraredBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 	}
 
 	return FALSE;
-}
-
-/// <summary>
-/// Initializes the default Kinect sensor
-/// </summary>
-/// <returns>indicates success or failure</returns>
-HRESULT CInfraredBasics::InitializeDefaultSensor()
-{
-	HRESULT hr;
-
-	hr = GetDefaultKinectSensor(&m_pKinectSensor);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-
-	if (m_pKinectSensor)
-	{
-		// Initialize the Kinect and get the infrared reader
-		IInfraredFrameSource* pInfraredFrameSource = NULL;
-
-		hr = m_pKinectSensor->Open();
-
-		if (SUCCEEDED(hr))
-		{
-			hr = m_pKinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
-		}
-
-		if (SUCCEEDED(hr))
-		{
-			hr = pInfraredFrameSource->OpenReader(&m_pInfraredFrameReader);
-		}
-
-		SafeRelease(pInfraredFrameSource);
-	}
-
-	if (!m_pKinectSensor || FAILED(hr))
-	{
-		SetStatusMessage(L"No ready Kinect found!", 10000, true);
-		return E_FAIL;
-	}
-
-	return hr;
-}
-
-/// <summary>
-/// Handle new infrared data
-/// <param name="nTime">timestamp of frame</param>
-/// <param name="pBuffer">pointer to frame data</param>
-/// <param name="nWidth">width (in pixels) of input image data</param>
-/// <param name="nHeight">height (in pixels) of input image data</param>
-/// </summary>
-void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight)
-{
-	if (m_hWnd)
-	{
-		if (!m_nStartTime)
-		{
-			m_nStartTime = nTime;
-		}
-
-		double fps = 0.0;
-
-		LARGE_INTEGER qpcNow = { 0 };
-		if (m_fFreq)
-		{
-			if (QueryPerformanceCounter(&qpcNow))
-			{
-				if (m_nLastCounter)
-				{
-					m_nFramesSinceUpdate++;
-					fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
-				}
-			}
-		}
-
-		WCHAR szStatusMessage[64];
-		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
-
-		if (SetStatusMessage(szStatusMessage, 1000, false))
-		{
-			m_nLastCounter = qpcNow.QuadPart;
-			m_nFramesSinceUpdate = 0;
-		}
-	}
-
-	if (m_pInfraredRGBX && pBuffer && (nWidth == cInfraredWidth) && (nHeight == cInfraredHeight))
-	{
-		RGBQUAD* pDest = m_pInfraredRGBX;
-
-		// end pixel is start + width*height - 1
-		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
-
-		while (pBuffer < pBufferEnd)
-		{
-			// normalize the incoming infrared data (ushort) to a float ranging from 
-			// [InfraredOutputValueMinimum, InfraredOutputValueMaximum] by
-			// 1. dividing the incoming value by the source maximum value
-			float intensityRatio = static_cast<float>(*pBuffer) / InfraredSourceValueMaximum;
-
-			// 2. dividing by the (average scene value * standard deviations)
-			intensityRatio /= InfraredSceneValueAverage * InfraredSceneStandardDeviations;
-
-			// 3. limiting the value to InfraredOutputValueMaximum
-			intensityRatio = std::min(InfraredOutputValueMaximum, intensityRatio);
-
-			// 4. limiting the lower value InfraredOutputValueMinimym
-			intensityRatio = std::max(InfraredOutputValueMinimum, intensityRatio);
-
-			// 5. converting the normalized value to a byte and using the result
-			// as the RGB components required by the image
-			byte intensity = static_cast<byte>(intensityRatio * 255.0f);
-			pDest->rgbRed = intensity;
-			pDest->rgbGreen = intensity;
-			pDest->rgbBlue = intensity;
-
-			++pDest;
-			++pBuffer;
-		}
-
-		m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
-
-	}
 }
 
 /// <summary>

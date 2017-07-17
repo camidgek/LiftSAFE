@@ -53,6 +53,13 @@ public:
 	~CInfraredBasics();
 
 	/// <summary>
+	/// Creates the main window and begins processing
+	/// </summary>
+	/// <param name="hInstance"></param>
+	/// <param name="nCmdShow"></param>
+	int                     Run(HINSTANCE hInstance, int nCmdShow);
+
+	/// <summary>
 	/// Handles window messages, passes most to the class instance to handle
 	/// </summary>
 	/// <param name="hWnd">window message is for</param>
@@ -71,13 +78,6 @@ public:
 	/// <param name="lParam">additional message data</param>
 	/// <returns>result of message processing</returns>
 	LRESULT CALLBACK        DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-	/// <summary>
-	/// Creates the main window and begins processing
-	/// </summary>
-	/// <param name="hInstance"></param>
-	/// <param name="nCmdShow"></param>
-	int                     Run(HINSTANCE hInstance, int nCmdShow);
 
 private:
 	HWND                    m_hWnd;
