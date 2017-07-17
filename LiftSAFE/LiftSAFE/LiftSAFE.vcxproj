@@ -126,11 +126,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ImageProcessor.cpp" />
-    <ClCompile Include="InfraredBasics.cpp" />
+    <ClCompile Include="ImageRenderer.cpp" />
+    <ClCompile Include="ImageGrabber.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImageProcessor.h" />
-    <ClInclude Include="InfraredBasics.h" />
+    <ClInclude Include="ImageGrabber.h" />
+    <ClInclude Include="ImageRenderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

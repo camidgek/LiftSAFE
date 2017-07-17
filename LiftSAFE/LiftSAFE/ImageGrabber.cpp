@@ -7,40 +7,18 @@
 #include "stdafx.h"
 #include <strsafe.h>
 #include "resource.h"
-#include "InfraredBasics.h"
-
-/// <summary>
-/// Entry point for the application
-/// </summary>
-/// <param name="hInstance">handle to the application instance</param>
-/// <param name="hPrevInstance">always 0</param>
-/// <param name="lpCmdLine">command line arguments</param>
-/// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
-/// <returns>status</returns>
-int APIENTRY wWinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPWSTR lpCmdLine,
-	_In_ int nShowCmd)
-{
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
-
-	CInfraredBasics application;
-	application.Run(hInstance, nShowCmd);
-}
+#include "ImageGrabber.h"
 
 /// <summary>
 /// Constructor
 /// </summary>
-CInfraredBasics::CInfraredBasics() :
+CImageGrabber::CImageGrabber() :
 	m_hWnd(NULL),
 	m_nStartTime(0),
 	m_nLastCounter(0),
 	m_nFramesSinceUpdate(0),
 	m_fFreq(0),
 	m_nNextStatusTime(0LL),
-	m_bSaveScreenshot(false),
 	m_pKinectSensor(NULL),
 	m_pInfraredFrameReader(NULL),
 	m_pD2DFactory(NULL),
@@ -53,15 +31,16 @@ CInfraredBasics::CInfraredBasics() :
 		m_fFreq = double(qpf.QuadPart);
 	}
 
+	InitializeDefaultSensor();
+
 	// create heap storage for infrared pixel data in RGBX format
 	m_pInfraredRGBX = new RGBQUAD[cInfraredWidth * cInfraredHeight];
 }
 
-
 /// <summary>
 /// Destructor
 /// </summary>
-CInfraredBasics::~CInfraredBasics()
+CImageGrabber::~CImageGrabber()
 {
 	if (m_pInfraredRGBX)
 	{
@@ -89,31 +68,16 @@ CInfraredBasics::~CInfraredBasics()
 /// </summary>
 /// <param name="hInstance">handle to the application instance</param>
 /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
-int CInfraredBasics::Run(HINSTANCE hInstance, int nCmdShow)
+void CImageGrabber::GetInfraredImage(RGBQUAD* pInfraredImage)
 {
-	MSG       msg = { 0 };
-	
-	InitializeDefaultSensor();
-
-	// Main message loop
-	while (msg.message != WM_QUIT)
-	{
-		Update();
-
-		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessageW(&msg);
-		}
-	}
-
-	return static_cast<int>(msg.wParam);
+	Update();
+	*pInfraredImage = *m_pInfraredRGBX;
 }
 
 /// <summary>
 /// Main processing function
 /// </summary>
-void CInfraredBasics::Update()
+void CImageGrabber::Update()
 {
 	if (!m_pInfraredFrameReader)
 	{
@@ -173,7 +137,7 @@ void CInfraredBasics::Update()
 /// <param name="nWidth">width (in pixels) of input image data</param>
 /// <param name="nHeight">height (in pixels) of input image data</param>
 /// </summary>
-void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight)
+void CImageGrabber::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight)
 {
 	if (m_hWnd)
 	{
@@ -241,7 +205,7 @@ void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nW
 			++pBuffer;
 		}
 
-		m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
+		//m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
 
 	}
 }
@@ -250,7 +214,7 @@ void CInfraredBasics::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nW
 /// Initializes the default Kinect sensor
 /// </summary>
 /// <returns>indicates success or failure</returns>
-HRESULT CInfraredBasics::InitializeDefaultSensor()
+HRESULT CImageGrabber::InitializeDefaultSensor()
 {
 	HRESULT hr;
 
@@ -297,18 +261,18 @@ HRESULT CInfraredBasics::InitializeDefaultSensor()
 /// <param name="wParam">message data</param>
 /// <param name="lParam">additional message data</param>
 /// <returns>result of message processing</returns>
-LRESULT CALLBACK CInfraredBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CImageGrabber::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	CInfraredBasics* pThis = NULL;
+	CImageGrabber* pThis = NULL;
 
 	if (WM_INITDIALOG == uMsg)
 	{
-		pThis = reinterpret_cast<CInfraredBasics*>(lParam);
+		pThis = reinterpret_cast<CImageGrabber*>(lParam);
 		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
 	}
 	else
 	{
-		pThis = reinterpret_cast<CInfraredBasics*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		pThis = reinterpret_cast<CImageGrabber*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	}
 
 	if (pThis)
@@ -327,7 +291,7 @@ LRESULT CALLBACK CInfraredBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wPa
 /// <param name="wParam">message data</param>
 /// <param name="lParam">additional message data</param>
 /// <returns>result of message processing</returns>
-LRESULT CALLBACK CInfraredBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CImageGrabber::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
 	UNREFERENCED_PARAMETER(lParam);
@@ -376,7 +340,7 @@ LRESULT CALLBACK CInfraredBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 /// <param name="szMessage">message to display</param>
 /// <param name="showTimeMsec">time in milliseconds to ignore future status messages</param>
 /// <param name="bForce">force status update</param>
-bool CInfraredBasics::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec, bool bForce)
+bool CImageGrabber::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec, bool bForce)
 {
 	INT64 now = GetTickCount64();
 

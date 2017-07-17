@@ -36,7 +36,7 @@
 /// hard coded, as was done here, or calculated at runtime.
 #define InfraredSceneStandardDeviations 3.0f
 
-class CInfraredBasics
+class CImageGrabber
 {
 	static const int        cInfraredWidth = 512;
 	static const int        cInfraredHeight = 424;
@@ -45,19 +45,29 @@ public:
 	/// <summary>
 	/// Constructor
 	/// </summary>
-	CInfraredBasics();
+	CImageGrabber();
 
 	/// <summary>
 	/// Destructor
 	/// </summary>
-	~CInfraredBasics();
+	~CImageGrabber();
+
+	int getInfraredWidth()
+	{
+		return cInfraredWidth;
+	}
+
+	int getInfraredHeight()
+	{
+		return cInfraredHeight;
+	}
 
 	/// <summary>
 	/// Creates the main window and begins processing
 	/// </summary>
 	/// <param name="hInstance"></param>
 	/// <param name="nCmdShow"></param>
-	int                     Run(HINSTANCE hInstance, int nCmdShow);
+	void                     GetInfraredImage(RGBQUAD *pInfraredImage);
 
 	/// <summary>
 	/// Handles window messages, passes most to the class instance to handle
