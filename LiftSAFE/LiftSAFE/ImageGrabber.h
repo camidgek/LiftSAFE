@@ -67,7 +67,7 @@ public:
 	/// </summary>
 	/// <param name="hInstance"></param>
 	/// <param name="nCmdShow"></param>
-	void                     GetInfraredImage(RGBQUAD *pInfraredImage);
+	void                     GetInfraredImage(RGBQUAD** pInfraredImage);
 
 	/// <summary>
 	/// Handles window messages, passes most to the class instance to handle
@@ -114,7 +114,7 @@ private:
 	/// <summary>
 	/// Main processing function
 	/// </summary>
-	void                    Update();
+	void                    Update(RGBQUAD** pInfraredImage);
 
 	/// <summary>
 	/// Initializes the default Kinect sensor

@@ -68,16 +68,16 @@ CImageGrabber::~CImageGrabber()
 /// </summary>
 /// <param name="hInstance">handle to the application instance</param>
 /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
-void CImageGrabber::GetInfraredImage(RGBQUAD* pInfraredImage)
+void CImageGrabber::GetInfraredImage(RGBQUAD** pInfraredImage)
 {
-	Update();
-	*pInfraredImage = *m_pInfraredRGBX;
+	Update(pInfraredImage);
+	//*pInfraredImage = *m_pInfraredRGBX;
 }
 
 /// <summary>
 /// Main processing function
 /// </summary>
-void CImageGrabber::Update()
+void CImageGrabber::Update(RGBQUAD** pInfraredImage)
 {
 	if (!m_pInfraredFrameReader)
 	{
@@ -122,6 +122,7 @@ void CImageGrabber::Update()
 		if (SUCCEEDED(hr))
 		{
 			ProcessInfrared(nTime, pBuffer, nWidth, nHeight);
+			*pInfraredImage = m_pInfraredRGBX;
 		}
 
 		SafeRelease(pFrameDescription);

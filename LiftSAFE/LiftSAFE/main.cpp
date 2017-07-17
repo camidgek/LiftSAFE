@@ -19,20 +19,22 @@ int APIENTRY wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	CImageGrabber* application = new CImageGrabber;
+	CImageGrabber* grabber = new CImageGrabber;
 	CImageProcessor* ImageProcessor = new CImageProcessor;
 
-	int test = application->getInfraredHeight();
-	int test2 = application->getInfraredWidth();
+	int test = grabber->getInfraredHeight();
+	int test2 = grabber->getInfraredWidth();
 
 	RGBQUAD* pInfraredImage = new RGBQUAD[test * test2];
+	RGBQUAD* original = pInfraredImage;
 
 	MSG       msg = { 0 };
 	// Main message loop
 	while (msg.message != WM_QUIT)
 	{
-		application->GetInfraredImage(pInfraredImage);
-		ImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(pInfraredImage));
+		grabber->GetInfraredImage(&pInfraredImage);
+		if (pInfraredImage != original)
+			ImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(pInfraredImage));
 
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 		{
