@@ -32,12 +32,17 @@ public:
 
 	std::vector<cv::Point2f> get_positions(cv::Mat& image);
 
+	bool check_for_fault_bar_balance(std::vector<bool> balance_values);
+
 private:
 	cv::Mat						m_mIrImage;
 	cv::Mat						m_mThreshImage;
 	int							m_nHeight;
 	int							m_nWidth;
 	int							m_nFrame;
+	bool						m_bInBalance;
+	bool						m_bFault;
 	std::vector<cv::Point2f>	m_vCenterPointsLeft;
 	std::vector<cv::Point2f>	m_vCenterPointsRight;
+	std::vector<bool>			m_vBarBalanceValues;
 };

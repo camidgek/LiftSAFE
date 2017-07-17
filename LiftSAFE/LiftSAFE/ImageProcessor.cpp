@@ -17,7 +17,10 @@ CImageProcessor::CImageProcessor() :
 	m_nHeight(0),
 	m_nFrame(0),
 	m_vCenterPointsLeft(),
-	m_vCenterPointsRight()
+	m_vCenterPointsRight(),
+	m_vBarBalanceValues(),
+	m_bFault(0),
+	m_bInBalance(0)
 {
 	
 }
@@ -34,14 +37,18 @@ CImageProcessor::~CImageProcessor()
 /// </summary>
 void CImageProcessor::ProcessImage(BYTE* pImage)
 {
+	// Clone the passed BYTE image into Mat format
 	m_mIrImage = cv::Mat(cvSize(512, 424), CV_8UC4, pImage).clone();
 	
+	// Get height and width of image
 	m_nWidth = m_mIrImage.cols; m_nHeight = m_mIrImage.rows;
 
+	// Color correct to B&W (shouldn't actually be necessary)
 	cv::Mat temp, grayImage;
 	cv::cvtColor(m_mIrImage, temp, cv::COLOR_BGRA2BGR);
 	cv::cvtColor(temp, grayImage, cv::COLOR_BGR2GRAY);
 
+	// Apply Threshold so only the reflective tape is white, rest is black
 	cv::threshold(grayImage, m_mThreshImage, 200, 255, cv::THRESH_BINARY);
 
 	// Morphological opening (removes small objects from the foreground)
@@ -55,6 +62,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	// Retrieve a vector of points with the (x,y) location of the objects
 	std::vector<cv::Point2f> points = get_positions(m_mThreshImage);
 
+	// For each point, assign to vector based on location
 	for (unsigned int i = 0; i < points.size(); i++)
 	{
 		// Left Half
@@ -69,7 +77,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		}
 	}
 
-	// Check for zeros
+	// Check for, and fill in, zeros
 	if (m_vCenterPointsLeft.size() < m_nFrame + 1)
 	{
 		m_vCenterPointsLeft.push_back(cv::Point2f(0, 0));
@@ -79,17 +87,34 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		m_vCenterPointsRight.push_back(cv::Point2f(0, 0));
 	}
 
-	int adjacent = m_vCenterPointsLeft[m_nFrame].x - m_vCenterPointsRight[m_nFrame].x;
-	int opposite = m_vCenterPointsLeft[m_nFrame].y - m_vCenterPointsRight[m_nFrame].y;
+	// Calculate angle of two points from the vectors **MOVE INTO OWN FUNCTION**
+	int adjacent = m_vCenterPointsRight[m_nFrame].x - m_vCenterPointsLeft[m_nFrame].x;
+	int opposite = m_vCenterPointsRight[m_nFrame].y - m_vCenterPointsLeft[m_nFrame].y;
 	float radians = atan2(opposite,adjacent);
-	float angle = (180 * radians) / PI;
+	float angle = abs((180 * radians) / PI);
 
+	// Check calculated angle against threshold and add to own vector
+	if (angle > 10)
+	{
+		m_bInBalance = 0;
+	}
+	else
+	{
+		m_bInBalance = 1;
+	}
+	m_vBarBalanceValues.push_back(m_bInBalance);
+
+	// Check last 5 frames for balace fault
+	m_bFault = check_for_fault_bar_balance(m_vBarBalanceValues);
+
+	// Convert variable to string for visual purposes
 	std::stringstream stream;
-	stream << std::fixed << std::setprecision(2) << angle;
+	stream << std::fixed << std::setprecision(2) << m_bFault;
 	std::string strAngle = stream.str();
 	
+	// Display fault status on screen
 	cv::putText(m_mIrImage,									// Input Image
-		strAngle,											// Text
+		"Fault: " + strAngle,								// Text
 		cv::Point2f(30,30),									// Position
 		cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
 		1,													// Scale
@@ -144,4 +169,22 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	}
 
 	return center;
+}
+
+bool CImageProcessor::check_for_fault_bar_balance(std::vector<bool> balance_values)
+{
+	bool balanced = 0;
+	if (balance_values.size() < 6)
+		return 0;
+	else if (m_bFault == 1)
+		return 1;
+	else
+	{
+		for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
+		{
+			if (balance_values[i] == 1)
+				balanced = 1;
+		}
+		return !balanced;
+	}
 }
