@@ -52,15 +52,11 @@ public:
 	/// </summary>
 	~CImageGrabber();
 
-	int getInfraredWidth()
-	{
-		return cInfraredWidth;
-	}
-
-	int getInfraredHeight()
-	{
-		return cInfraredHeight;
-	}
+	/// <summary>
+	/// Width and Height getters
+	/// </summary>
+	int getInfraredWidth(){	return cInfraredWidth; }
+	int getInfraredHeight(){ return cInfraredHeight; }
 
 	/// <summary>
 	/// Creates the main window and begins processing
@@ -107,9 +103,6 @@ private:
 	// Direct2D
 	ID2D1Factory*           m_pD2DFactory;
 	RGBQUAD*                m_pInfraredRGBX;
-
-	// OPENCV
-	CImageProcessor*			m_pImageProcessor;
 
 	/// <summary>
 	/// Main processing function

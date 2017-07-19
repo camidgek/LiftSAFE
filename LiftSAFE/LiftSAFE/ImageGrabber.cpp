@@ -22,8 +22,7 @@ CImageGrabber::CImageGrabber() :
 	m_pKinectSensor(NULL),
 	m_pInfraredFrameReader(NULL),
 	m_pD2DFactory(NULL),
-	m_pInfraredRGBX(NULL),
-	m_pImageProcessor(new CImageProcessor)
+	m_pInfraredRGBX(NULL)
 {
 	LARGE_INTEGER qpf = { 0 };
 	if (QueryPerformanceFrequency(&qpf))

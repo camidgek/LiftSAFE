@@ -44,6 +44,4 @@ int APIENTRY wWinMain(
 	}
 
 	return static_cast<int>(msg.wParam);
-
-
 }
