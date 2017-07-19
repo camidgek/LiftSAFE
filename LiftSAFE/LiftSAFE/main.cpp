@@ -22,10 +22,10 @@ int APIENTRY wWinMain(
 	CImageGrabber* grabber = new CImageGrabber;
 	CImageProcessor* ImageProcessor = new CImageProcessor;
 
-	int test = grabber->getInfraredHeight();
-	int test2 = grabber->getInfraredWidth();
+	int irHeight = grabber->getInfraredHeight();
+	int irWidth = grabber->getInfraredWidth();
 
-	RGBQUAD* pInfraredImage = new RGBQUAD[test * test2];
+	RGBQUAD* pInfraredImage = new RGBQUAD[irHeight * irWidth];
 	RGBQUAD* original = pInfraredImage;
 
 	MSG       msg = { 0 };

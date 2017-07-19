@@ -204,9 +204,6 @@ void CImageGrabber::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWid
 			++pDest;
 			++pBuffer;
 		}
-
-		//m_pImageProcessor->ProcessImage(reinterpret_cast<BYTE*>(m_pInfraredRGBX));
-
 	}
 }
 

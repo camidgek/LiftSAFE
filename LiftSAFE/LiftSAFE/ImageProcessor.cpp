@@ -68,16 +68,18 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		// Left Half
 		if (points[i].x < (m_nWidth / 2))
 		{
-			m_vCenterPointsLeft.push_back(points[i]);
+			if (m_vCenterPointsLeft.size() == m_nFrame)
+				m_vCenterPointsLeft.push_back(points[i]);
 		}
 		// Right Half
 		else
 		{
-			m_vCenterPointsRight.push_back(points[i]);
+			if (m_vCenterPointsRight.size() == m_nFrame)
+				m_vCenterPointsRight.push_back(points[i]);
 		}
 	}
 
-	// Check for, and fill in, zeros
+	// Check for, and fill in, zeros if no points were added in previous step
 	if (m_vCenterPointsLeft.size() < m_nFrame + 1)
 	{
 		m_vCenterPointsLeft.push_back(cv::Point2f(0, 0));
@@ -107,6 +109,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	// Check last 5 frames for balace fault
 	m_bFault = check_for_fault_bar_balance(m_vBarBalanceValues);
 
+	/* BELOW IS ALL VISUAL */
 	// Convert variable to string for visual purposes
 	std::stringstream stream;
 	stream << std::fixed << std::setprecision(2) << m_bFault;
@@ -143,6 +146,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	m_nFrame++;
 
 	cv::imshow("window", m_mIrImage);
+	//cv::imshow("window", m_mThreshImage);
 }
 
 std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)

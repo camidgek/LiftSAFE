@@ -30,10 +30,6 @@ public:
 	/// </summary>
 	void ProcessImage(BYTE* pImage);
 
-	std::vector<cv::Point2f> get_positions(cv::Mat& image);
-
-	bool check_for_fault_bar_balance(std::vector<bool> balance_values);
-
 private:
 	cv::Mat						m_mIrImage;
 	cv::Mat						m_mThreshImage;
@@ -45,4 +41,8 @@ private:
 	std::vector<cv::Point2f>	m_vCenterPointsLeft;
 	std::vector<cv::Point2f>	m_vCenterPointsRight;
 	std::vector<bool>			m_vBarBalanceValues;
+
+	std::vector<cv::Point2f> get_positions(cv::Mat& image);
+
+	bool check_for_fault_bar_balance(std::vector<bool> balance_values);
 };
