@@ -44,5 +44,5 @@ private:
 
 	std::vector<cv::Point2f> get_positions(cv::Mat& image);
 
-	bool check_for_fault_bar_balance(std::vector<bool> balance_values);
+	bool check_for_fault_bar_balance();
 };

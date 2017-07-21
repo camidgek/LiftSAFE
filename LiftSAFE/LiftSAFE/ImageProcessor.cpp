@@ -107,7 +107,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	m_vBarBalanceValues.push_back(m_bInBalance);
 
 	// Check last 5 frames for balace fault
-	m_bFault = check_for_fault_bar_balance(m_vBarBalanceValues);
+	m_bFault = check_for_fault_bar_balance();
 
 	/* BELOW IS ALL VISUAL */
 	// Convert variable to string for visual purposes
@@ -131,7 +131,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		int strY = points[i].y;
 		std::string final = "(" + std::to_string(strX) + "," + std::to_string(strY) + ")";
 
-		// Overlay point on image
+		// Overlay coords on image
 		cv::putText(m_mIrImage,											// Input Image
 					final,	// Text
 					points[i],											// Position
@@ -145,8 +145,8 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 
 	m_nFrame++;
 
-	cv::imshow("window", m_mIrImage);
-	//cv::imshow("window", m_mThreshImage);
+	//cv::imshow("window", m_mIrImage);
+	//cv::imshow("window2", m_mThreshImage);
 }
 
 std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
@@ -164,7 +164,7 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	for (unsigned int i = 0; i < contours.size(); i++)
 	{
 		moment = cv::moments(contours[i]);
-		if (moment.m00 < 750)
+		if (moment.m00 < 500 && moment.m00 > 100)
 		{
 			unsigned int x = (double(moment.m10) / double(moment.m00));
 			unsigned int y = (double(moment.m01) / double(moment.m00));
@@ -175,10 +175,10 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	return center;
 }
 
-bool CImageProcessor::check_for_fault_bar_balance(std::vector<bool> balance_values)
+bool CImageProcessor::check_for_fault_bar_balance()
 {
 	bool balanced = 0;
-	if (balance_values.size() < 6)
+	if (m_vBarBalanceValues.size() < 6)
 		return 0;
 	else if (m_bFault == 1)
 		return 1;
@@ -186,7 +186,7 @@ bool CImageProcessor::check_for_fault_bar_balance(std::vector<bool> balance_valu
 	{
 		for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
 		{
-			if (balance_values[i] == 1)
+			if (m_vBarBalanceValues[i] == 1)
 				balanced = 1;
 		}
 		return !balanced;

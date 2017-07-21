@@ -129,13 +129,17 @@
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="ImageGrabber.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SerialPort.cpp" />
+    <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImageProcessor.h" />
     <ClInclude Include="ImageGrabber.h" />
     <ClInclude Include="ImageRenderer.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SerialPort.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="User.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
