@@ -128,11 +128,12 @@
     <ClCompile Include="ImageProcessor.cpp" />
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="ImageGrabber.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="ApplicationMain.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ApplicationMain.h" />
     <ClInclude Include="ImageProcessor.h" />
     <ClInclude Include="ImageGrabber.h" />
     <ClInclude Include="ImageRenderer.h" />

@@ -1,8 +1,4 @@
-#include "stdafx.h"
-#include "ImageGrabber.h"
-#include "ImageProcessor.h"
-#include "User.h"
-#include "SerialPort.h"
+#include "ApplicationMain.h"
 
 /// <summary>
 /// Entry point for the application
@@ -21,6 +17,26 @@ int APIENTRY wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
+	CApplication application;
+	application.Run(hInstance, nShowCmd);
+}
+
+/// <summary>
+/// Constructor
+/// </summary>
+CApplication::CApplication()
+{
+}
+
+/// <summary>
+/// Destructor
+/// </summary>
+CApplication::~CApplication()
+{
+}
+
+int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
+{
 	CImageGrabber* grabber = new CImageGrabber;
 	CImageProcessor* processor = new CImageProcessor;
 
@@ -53,11 +69,10 @@ int APIENTRY wWinMain(
 		MAKEINTRESOURCE(IDD_APP),
 		NULL,
 		(DLGPROC)CImageGrabber::MessageRouter,
-		0);
+		reinterpret_cast<LPARAM>(this));
 
 	// Show window
-	ShowWindow(hWndApp, SW_SHOWMAXIMIZED);
-
+	ShowWindow(hWndApp, nCmdShow);
 
 	MSG       msg = { 0 };
 	// Main message loop
