@@ -67,15 +67,21 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	{
 		// Left Half
 		if (points[i].x < (m_nWidth / 2))
-		{
-			if (m_vCenterPointsLeft.size() == m_nFrame)
-				m_vCenterPointsLeft.push_back(points[i]);
+		{	// Top Left Quarter
+			if (points[i].y < (m_nHeight / 2))
+			{
+				if (m_vCenterPointsLeft.size() == m_nFrame)
+					m_vCenterPointsLeft.push_back(points[i]);
+			}
 		}
 		// Right Half
 		else
-		{
-			if (m_vCenterPointsRight.size() == m_nFrame)
-				m_vCenterPointsRight.push_back(points[i]);
+		{	// Top Right Quarter
+			if (points[i].y < (m_nHeight / 2))
+			{
+				if (m_vCenterPointsRight.size() == m_nFrame)
+					m_vCenterPointsRight.push_back(points[i]);
+			}
 		}
 	}
 
@@ -145,8 +151,8 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 
 	m_nFrame++;
 
-	//cv::imshow("window", m_mIrImage);
-	//cv::imshow("window2", m_mThreshImage);
+	cv::imshow("window", m_mIrImage);
+	cv::imshow("window2", m_mThreshImage);
 }
 
 std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
@@ -164,7 +170,7 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	for (unsigned int i = 0; i < contours.size(); i++)
 	{
 		moment = cv::moments(contours[i]);
-		if (moment.m00 < 500 && moment.m00 > 100)
+		if (moment.m00 < 500 && moment.m00 > 10)
 		{
 			unsigned int x = (double(moment.m10) / double(moment.m00));
 			unsigned int y = (double(moment.m01) / double(moment.m00));

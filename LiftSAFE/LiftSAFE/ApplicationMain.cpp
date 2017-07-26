@@ -47,7 +47,7 @@ int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
 	RGBQUAD* pOriginal = pInfraredImage;
 
 	MSG       msg = { 0 };
-	/*
+	
 	// Main message loop
 	while (msg.message != WM_QUIT)
 	{
@@ -61,7 +61,7 @@ int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
 			DispatchMessageW(&msg);
 		}
 	}
-	*/
+	
 	return static_cast<int>(msg.wParam);
 }
 

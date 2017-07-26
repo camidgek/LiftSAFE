@@ -126,7 +126,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ImageProcessor.cpp" />
-    <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="ImageGrabber.cpp" />
     <ClCompile Include="ApplicationMain.cpp" />
     <ClCompile Include="SerialPort.cpp" />
@@ -136,7 +135,6 @@
     <ClInclude Include="ApplicationMain.h" />
     <ClInclude Include="ImageProcessor.h" />
     <ClInclude Include="ImageGrabber.h" />
-    <ClInclude Include="ImageRenderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="stdafx.h" />
