@@ -36,10 +36,13 @@ private:
 	int							m_nHeight;
 	int							m_nWidth;
 	int							m_nFrame;
+	int							m_nKneeThresh;
 	bool						m_bInBalance;
 	bool						m_bFault;
-	std::vector<cv::Point2f>	m_vCenterPointsLeft;
-	std::vector<cv::Point2f>	m_vCenterPointsRight;
+	std::vector<cv::Point2f>	m_vBarPointsLeft;
+	std::vector<cv::Point2f>	m_vBarPointsRight;
+	std::vector<cv::Point2f>	m_vKneePointsLeft;
+	std::vector<cv::Point2f>	m_vKneePointsRight;
 	std::vector<bool>			m_vBarBalanceValues;
 
 	std::vector<cv::Point2f> get_positions(cv::Mat& image);

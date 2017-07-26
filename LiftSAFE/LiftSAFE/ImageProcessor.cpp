@@ -16,13 +16,14 @@ CImageProcessor::CImageProcessor() :
 	m_nWidth(0),
 	m_nHeight(0),
 	m_nFrame(0),
-	m_vCenterPointsLeft(),
-	m_vCenterPointsRight(),
+	m_vBarPointsLeft(),
+	m_vBarPointsRight(),
 	m_vBarBalanceValues(),
 	m_bFault(0),
-	m_bInBalance(0)
+	m_bInBalance(0),
+	m_nKneeThresh(50)
 {
-	
+
 }
 
 /// <summary>
@@ -39,7 +40,7 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 {
 	// Clone the passed BYTE image into Mat format
 	m_mIrImage = cv::Mat(cvSize(512, 424), CV_8UC4, pImage).clone();
-	
+
 	// Get height and width of image
 	m_nWidth = m_mIrImage.cols; m_nHeight = m_mIrImage.rows;
 
@@ -70,8 +71,14 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		{	// Top Left Quarter
 			if (points[i].y < (m_nHeight / 2))
 			{
-				if (m_vCenterPointsLeft.size() == m_nFrame)
-					m_vCenterPointsLeft.push_back(points[i]);
+				if (m_vBarPointsLeft.size() == m_nFrame)
+					m_vBarPointsLeft.push_back(points[i]);
+			}
+			// Bottom Left Quarter
+			else
+			{
+				if (m_vKneePointsLeft.size() == m_nFrame)
+					m_vKneePointsLeft.push_back(points[i]);
 			}
 		}
 		// Right Half
@@ -79,27 +86,48 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		{	// Top Right Quarter
 			if (points[i].y < (m_nHeight / 2))
 			{
-				if (m_vCenterPointsRight.size() == m_nFrame)
-					m_vCenterPointsRight.push_back(points[i]);
+				if (m_vBarPointsRight.size() == m_nFrame)
+					m_vBarPointsRight.push_back(points[i]);
+			}
+			// Bottom Right Quarter
+			else
+			{
+				if (m_vKneePointsRight.size() == m_nFrame)
+					m_vKneePointsRight.push_back(points[i]);
 			}
 		}
 	}
 
 	// Check for, and fill in, zeros if no points were added in previous step
-	if (m_vCenterPointsLeft.size() < m_nFrame + 1)
+	if (m_vBarPointsLeft.size() < m_nFrame + 1)
 	{
-		m_vCenterPointsLeft.push_back(cv::Point2f(0, 0));
+		m_vBarPointsLeft.push_back(cv::Point2f(0, 0));
 	}
-	if (m_vCenterPointsRight.size() < m_nFrame + 1)
+	if (m_vBarPointsRight.size() < m_nFrame + 1)
 	{
-		m_vCenterPointsRight.push_back(cv::Point2f(0, 0));
+		m_vBarPointsRight.push_back(cv::Point2f(0, 0));
+	}
+	if (m_vKneePointsLeft.size() < m_nFrame + 1)
+	{
+		m_vKneePointsLeft.push_back(cv::Point2f(0, 0));
+	}
+	if (m_vKneePointsRight.size() < m_nFrame + 1)
+	{
+		m_vKneePointsRight.push_back(cv::Point2f(0, 0));
 	}
 
 	// Calculate angle of two points from the vectors **MOVE INTO OWN FUNCTION**
-	int adjacent = m_vCenterPointsRight[m_nFrame].x - m_vCenterPointsLeft[m_nFrame].x;
-	int opposite = m_vCenterPointsRight[m_nFrame].y - m_vCenterPointsLeft[m_nFrame].y;
+	int adjacent = m_vBarPointsRight[m_nFrame].x - m_vBarPointsLeft[m_nFrame].x;
+	int opposite = m_vBarPointsRight[m_nFrame].y - m_vBarPointsLeft[m_nFrame].y;
 	float radians = atan2(opposite,adjacent);
 	float angle = abs((180 * radians) / PI);
+
+	int distance = abs(m_vKneePointsLeft[m_nFrame].x - m_vKneePointsRight[m_nFrame].x);
+
+	if (distance < m_nKneeThresh)
+	{
+		m_bFault = 1;
+	}
 
 	// Check calculated angle against threshold and add to own vector
 	if (angle > 10)
