@@ -20,18 +20,18 @@ SerialPort::SerialPort(char *portName)
 		NULL);
 	if (this->handler == INVALID_HANDLE_VALUE) {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-			printf("ERROR: Handle was not attached. Reason: %s not available\n", portName);
+			//printf("ERROR: Handle was not attached. Reason: %s not available\n", portName);
 		}
 		else
 		{
-			printf("ERROR!!!");
+			//printf("ERROR!!!");
 		}
 	}
 	else {
 		DCB dcbSerialParameters = { 0 };
 
 		if (!GetCommState(this->handler, &dcbSerialParameters)) {
-			printf("failed to get current serial parameters");
+			//printf("failed to get current serial parameters");
 		}
 		else {
 			dcbSerialParameters.BaudRate = CBR_9600;
@@ -42,7 +42,7 @@ SerialPort::SerialPort(char *portName)
 
 			if (!SetCommState(handler, &dcbSerialParameters))
 			{
-				printf("ALERT: could not set Serial port parameters\n");
+				//printf("ALERT: could not set Serial port parameters\n");
 			}
 			else {
 				this->connected = true;
@@ -73,22 +73,11 @@ int SerialPort::readSerialPort(char *buffer, unsigned int buf_size)
 			toRead = buf_size;
 		}
 		else toRead = this->status.cbInQue;
-	}
 
-	if (ReadFile(this->handler, buffer, toRead, &bytesRead, NULL)) return bytesRead;
+		if (ReadFile(this->handler, buffer, toRead, &bytesRead, NULL)) return bytesRead;
+	}
 
 	return 0;
-}
-
-bool SerialPort::writeSerialPort(char *buffer, unsigned int buf_size)
-{
-	DWORD bytesSend;
-
-	if (!WriteFile(this->handler, (void*)buffer, buf_size, &bytesSend, 0)) {
-		ClearCommError(this->handler, &this->errors, &this->status);
-		return false;
-	}
-	else return true;
 }
 
 bool SerialPort::isConnected()

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "resource.h"
+#include "SerialPort.h"
 
 #include <opencv2/opencv.hpp>
 
@@ -28,9 +29,18 @@ public:
 	/// <summary>
 	/// OPENCV STUFF
 	/// </summary>
-	void ProcessImage(BYTE* pImage);
+	void ProcessImage(BYTE* pImage, SerialPort* pSerialPort);
 
 private:
+	// Arduino Stuff
+	char *port_name = "\\\\.\\COM3";
+	char incomingData[MAX_DATA_LENGTH];
+	int read_result = 0;
+	std::string str;
+	std::string new_str;
+	int value;
+
+	// Kinect Stuff
 	cv::Mat						m_mIrImage;
 	cv::Mat						m_mThreshImage;
 	int							m_nHeight;
@@ -38,14 +48,20 @@ private:
 	int							m_nFrame;
 	int							m_nKneeThresh;
 	bool						m_bInBalance;
+	bool						m_bInThreshBar;
+	bool						m_bInThreshKnee;
 	bool						m_bFault;
+	std::string					m_sFaultMessage;
 	std::vector<cv::Point2f>	m_vBarPointsLeft;
 	std::vector<cv::Point2f>	m_vBarPointsRight;
 	std::vector<cv::Point2f>	m_vKneePointsLeft;
 	std::vector<cv::Point2f>	m_vKneePointsRight;
 	std::vector<bool>			m_vBarBalanceValues;
+	std::vector<bool>			m_vBackThreshValues;
+	std::vector<bool>			m_vKneeThreshValues;
+
 
 	std::vector<cv::Point2f> get_positions(cv::Mat& image);
 
-	bool check_for_fault_bar_balance();
+	bool check_for_fault();
 };

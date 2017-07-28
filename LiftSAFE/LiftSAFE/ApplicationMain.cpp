@@ -1,4 +1,7 @@
 #include "ApplicationMain.h"
+//#include <fstream>
+
+void connectArduino();
 
 /// <summary>
 /// Entry point for the application
@@ -46,6 +49,8 @@ int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
 	RGBQUAD* pInfraredImage = new RGBQUAD[irHeight * irWidth];
 	RGBQUAD* pOriginal = pInfraredImage;
 
+	SerialPort arduino(port_name);
+
 	MSG       msg = { 0 };
 	
 	// Main message loop
@@ -53,8 +58,8 @@ int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
 	{
 		grabber->GetInfraredImage(&pInfraredImage);
 		if (pInfraredImage != pOriginal)
-			processor->ProcessImage(reinterpret_cast<BYTE*>(pInfraredImage));
-		
+			processor->ProcessImage(reinterpret_cast<BYTE*>(pInfraredImage), &arduino);
+
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -67,22 +72,5 @@ int CApplication::Run(HINSTANCE hInstance, int nCmdShow)
 
 void connectArduino()
 {
-	/*Portname must contain these backslashes, and remember to
-	replace the following com port*/
-	char *port_name = "\\\\.\\COM20";
-
-	//String for incoming data
-	//char incomingData[MAX_DATA_LENGTH];
-
-	SerialPort arduino(port_name);
-	char output[MAX_DATA_LENGTH];
-
-	while (arduino.isConnected()) {
-		//Writing string to arduino
-		arduino.writeSerialPort("fault\n", MAX_DATA_LENGTH);
-		//Getting reply from arduino
-		arduino.readSerialPort(output, MAX_DATA_LENGTH);
-		//printing the output
-		puts(output);
-	}
+	
 }

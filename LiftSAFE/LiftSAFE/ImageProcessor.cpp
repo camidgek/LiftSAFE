@@ -21,7 +21,10 @@ CImageProcessor::CImageProcessor() :
 	m_vBarBalanceValues(),
 	m_bFault(0),
 	m_bInBalance(0),
-	m_nKneeThresh(50)
+	m_nKneeThresh(45),
+	m_bInThreshBar(0),
+	m_bInThreshKnee(0),
+	m_sFaultMessage("")
 {
 
 }
@@ -36,7 +39,7 @@ CImageProcessor::~CImageProcessor()
 /// <summary>
 /// OPENCV STUFF
 /// </summary>
-void CImageProcessor::ProcessImage(BYTE* pImage)
+void CImageProcessor::ProcessImage(BYTE* pImage, SerialPort* pSerialPort)
 {
 	// Clone the passed BYTE image into Mat format
 	m_mIrImage = cv::Mat(cvSize(512, 424), CV_8UC4, pImage).clone();
@@ -122,12 +125,18 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	float radians = atan2(opposite,adjacent);
 	float angle = abs((180 * radians) / PI);
 
+	// Calculate knee distance
 	int distance = abs(m_vKneePointsLeft[m_nFrame].x - m_vKneePointsRight[m_nFrame].x);
 
 	if (distance < m_nKneeThresh)
 	{
-		m_bFault = 1;
+		m_bInThreshKnee = 0;
 	}
+	else
+	{
+		m_bInThreshKnee = 1;
+	}
+	m_vKneeThreshValues.push_back(m_bInThreshKnee);
 
 	// Check calculated angle against threshold and add to own vector
 	if (angle > 10)
@@ -140,19 +149,56 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 	}
 	m_vBarBalanceValues.push_back(m_bInBalance);
 
+	// Get values from Arduino
+	read_result = pSerialPort->readSerialPort(incomingData, MAX_DATA_LENGTH);
+	str = incomingData;
+	std::stringstream str_stream(str);
+	std::getline(str_stream, new_str, '\r');
+	value = atoi(new_str.c_str());
+
+	// Check calculated angle against threshold and add to own vector
+	if (value < 80)
+	{
+		m_bInThreshBar = 0;
+	}
+	else
+	{
+		m_bInThreshBar = 1;
+	}
+	m_vBackThreshValues.push_back(m_bInThreshBar);
+
 	// Check last 5 frames for balace fault
-	m_bFault = check_for_fault_bar_balance();
+	m_bFault = check_for_fault();
 
 	/* BELOW IS ALL VISUAL */
 	// Convert variable to string for visual purposes
 	std::stringstream stream;
-	stream << std::fixed << std::setprecision(2) << m_bFault;
+	stream << std::fixed << std::setprecision(2) << angle;
 	std::string strAngle = stream.str();
+	std::stringstream stream2;
+	stream2 << std::fixed << std::setprecision(2) << distance;
+	std::string strDistance = stream2.str();
 	
-	// Display fault status on screen
+	// Display Back Value
 	cv::putText(m_mIrImage,									// Input Image
-		"Fault: " + strAngle,								// Text
-		cv::Point2f(30,30),									// Position
+		"Back Value: " + new_str,							// Text
+		cv::Point2f(30, 30),								// Position
+		cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
+		1,													// Scale
+		cv::Scalar(0, 0, 255));								// Color
+
+	// Display Bar Value
+	cv::putText(m_mIrImage,									// Input Image
+		"Bar Angle: " + strAngle,							// Text
+		cv::Point2f(30,60),									// Position
+		cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
+		1,													// Scale
+		cv::Scalar(0, 0, 255));								// Color
+
+	// Display Knee Distance
+	cv::putText(m_mIrImage,									// Input Image
+		"Knee Dist: " + strDistance,						// Text
+		cv::Point2f(30,90),									// Position
 		cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
 		1,													// Scale
 		cv::Scalar(0, 0, 255));								// Color
@@ -177,10 +223,23 @@ void CImageProcessor::ProcessImage(BYTE* pImage)
 		cv::circle(m_mIrImage, points[i], 3, cv::Scalar(0, 0, 255), -1);
 	}
 
+	cv::Mat faultImage(cvSize(512, 424), CV_8UC4, cv::Scalar(0, 255, 0));
+
+	if (m_bFault)
+	{
+		faultImage.setTo(cv::Scalar(0, 0, 255));
+		// Display fault status on screen
+		cv::putText(faultImage,									// Input Image
+			"Section: " + m_sFaultMessage,						// Text
+			cv::Point2f(30, 30),								// Position
+			cv::FONT_HERSHEY_COMPLEX_SMALL,						// Font
+			1,													// Scale
+			cv::Scalar(0, 0, 0));								// Color
+	}
 	m_nFrame++;
 
 	cv::imshow("window", m_mIrImage);
-	cv::imshow("window2", m_mThreshImage);
+	cv::imshow("window2", faultImage);
 }
 
 std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
@@ -209,20 +268,71 @@ std::vector<cv::Point2f> CImageProcessor::get_positions(cv::Mat& pImage)
 	return center;
 }
 
-bool CImageProcessor::check_for_fault_bar_balance()
+bool CImageProcessor::check_for_fault()
 {
+	int section = 0;
 	bool balanced = 0;
-	if (m_vBarBalanceValues.size() < 6)
-		return 0;
-	else if (m_bFault == 1)
-		return 1;
-	else
+	switch (section)
 	{
-		for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
-		{
-			if (m_vBarBalanceValues[i] == 1)
-				balanced = 1;
-		}
-		return !balanced;
+		// Back
+		case 0:
+			if (m_vBackThreshValues.size() < 6)
+				return 0;
+			else if (m_bFault == 1)
+				return 1;
+			else
+			{
+				for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
+				{
+					if (m_vBackThreshValues[i] == 1)
+						balanced = 1;
+				}
+				if (balanced == 0)
+				{
+					m_sFaultMessage = "Back ";
+					return 1;
+				}
+			}
+		// Bar
+		case 1:
+			balanced = 0;
+			if (m_vBarBalanceValues.size() < 6)
+				return 0;
+			else if (m_bFault == 1)
+				return 1;
+			else
+			{
+				for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
+				{
+					if (m_vBarBalanceValues[i] == 1)
+						balanced = 1;
+				}
+				if (balanced == 0)
+				{
+					m_sFaultMessage = "Bar ";
+					return 1;
+				}
+			}
+		// Knees
+		case 2:
+			balanced = 0;
+			if (m_vKneeThreshValues.size() < 6)
+				return 0;
+			else if (m_bFault == 1)
+				return 1;
+			else
+			{
+				for (unsigned int i = m_nFrame; i > (m_nFrame - 5); i--)
+				{
+					if (m_vKneeThreshValues[i] == 1)
+						balanced = 1;
+				}
+				if (balanced == 0)
+				{
+					m_sFaultMessage = "Knees ";
+					return 1;
+				}
+			}
 	}
+	return 0;
 }
